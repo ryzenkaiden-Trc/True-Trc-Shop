@@ -203,12 +203,12 @@ button.btn[disabled]{opacity:.5;pointer-events:none}
  </div>
 </main>
 
-<script src="config.js"></script>
+<script>window.TRC_API="https://script.google.com/macros/s/AKfycbyjVvItvZ3eZsQlPYlBqdQdbotCrM81qh8s52v1AIgzLFQY9x4-123a2yh1P-KKvY7k/exec";</script>
 <script>
 var T="",f="all",P="std",fl=0,rows=[],CS="abcdefghijklmnopqrstuvwxyz0123456789#!@?*";
 function $(i){return document.getElementById(i)}
 async function api(b){var u=window.TRC_API;if(!u||u.indexOf("PASTE")>-1)throw{error:"config"};b.t=T;var r;try{r=await fetch(u,{method:"POST",body:JSON.stringify(b)})}catch(e){throw{error:"net"}}var d;try{d=await r.json()}catch(e){throw{error:"access"}}if(d.error)throw d;return d}
-function msg(x){var m={unauthorized:"Wrong token",config:"config.js has no URL",net:"Cannot reach server",access:"Set access to Anyone, then redeploy",bad:"Server error"};return m[x&&x.error]||"Try again"}
+function msg(x){var m={unauthorized:"Wrong token",config:"No server URL",net:"Cannot reach server",access:"Set access to Anyone, then redeploy",bad:"Server error"};return m[x&&x.error]||"Try again"}
 function rnd(n){var o="",lim=256-256%CS.length;while(o.length<n){var a=crypto.getRandomValues(new Uint8Array(64));for(var i=0;i<a.length&&o.length<n;i++)if(a[i]<lim)o+=CS[a[i]%CS.length]}return o}
 async function sha(s){var h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,"0")}).join("")}
 function cp(t,b){var o=b.textContent;function ok(){b.textContent="Copied";setTimeout(function(){b.textContent=o},1500)}function fb(){var a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){}a.remove()}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fb)}else fb()}
@@ -225,7 +225,7 @@ $("mn").onclick=function(){step(-1)};$("pp").onclick=function(){step(1)};
 $("gen").onclick=async function(){var b=$("gen");b.disabled=true;$("gm").textContent="";try{var n=Math.min(Math.max(+$("ct").value||1,1),100),keys=[],hs=[];for(var i=0;i<n;i++){var k="TRC_"+rnd(30);keys.push(k);hs.push(await sha(k))}await api({a:"add",plan:P,hashes:hs});show(keys);await load()}catch(x){$("gm").textContent=msg(x)}b.disabled=false};
 document.querySelectorAll("[data-f]").forEach(function(c){c.onclick=function(){f=c.dataset.f;document.querySelectorAll("[data-f]").forEach(function(o){o.setAttribute("aria-pressed",o===c)});draw()}});
 $("kl").onclick=async function(e){var b=e.target.closest("button");if(!b)return;if(b.dataset.a==="delete"&&b.textContent!=="Sure?"){b.textContent="Sure?";setTimeout(function(){b.textContent="Delete"},3000);return}b.disabled=true;try{await api({a:b.dataset.a==="delete"?"del":"reset",id:b.dataset.id});await load()}catch(x){b.disabled=false}};
-(async function(){var u=window.TRC_API,s=$("sv");if(!u||u.indexOf("PASTE")>-1){s.className="sv mono bad";s.textContent="config.js has no URL";return}try{var d=await(await fetch(u)).json();if(!d.ok)throw 0;s.className="sv mono ok";s.textContent="Server online"}catch(e){s.className="sv mono bad";s.textContent="Cannot reach server"}})();
+(async function(){var u=window.TRC_API,s=$("sv");if(!u||u.indexOf("PASTE")>-1){s.className="sv mono bad";s.textContent="No server URL";return}try{var d=await(await fetch(u)).json();if(!d.ok)throw 0;s.className="sv mono ok";s.textContent="Server online"}catch(e){s.className="sv mono bad";s.textContent="Cannot reach server"}})();
 </script>
 </body>
 </html>
