@@ -161,6 +161,8 @@ button.btn[disabled]{opacity:.5;pointer-events:none}
 #app:not([hidden]) .pn{animation:hin .7s cubic-bezier(.2,.7,.2,1) backwards}
 #app:not([hidden]) .pn+.pn{animation-delay:.12s}
 #tk.shake{animation:shake .4s}
+.sv{margin:14px 0 0;font-size:13px;color:var(--mute)}
+.sv.ok{color:#5fe3a1}.sv.bad{color:#ff6b6b}
 @media (prefers-reduced-motion:reduce){#app .pn,.kc,.kr,#lock.gone,#tk.shake{animation:none}}
 </style>
 </head>
@@ -173,8 +175,9 @@ button.btn[disabled]{opacity:.5;pointer-events:none}
 <main class="wrap adm">
  <div class="pn" id="lock">
   <h2 class="chrome">Admin</h2>
-  <div class="fld"><input id="tk" type="password" class="mono" placeholder="Admin token" autocomplete="current-password"><button class="btn solid" id="go" type="button">Unlock</button></div>
+  <div class="fld"><input id="tk" type="password" class="mono" placeholder="Admin token" autocomplete="off"><button class="btn solid" id="go" type="button">Unlock</button></div>
   <p class="msg" id="lm"></p>
+  <p class="sv mono" id="sv"></p>
  </div>
 
  <div id="app" hidden>
@@ -204,23 +207,25 @@ button.btn[disabled]{opacity:.5;pointer-events:none}
 <script>
 var T="",f="all",P="std",fl=0,rows=[],CS="abcdefghijklmnopqrstuvwxyz0123456789#!@?*";
 function $(i){return document.getElementById(i)}
-async function api(b){b.t=T;var r=await fetch(window.TRC_API,{method:"POST",body:JSON.stringify(b)});var d=await r.json();if(d.error)throw d;return d}
+async function api(b){var u=window.TRC_API;if(!u||u.indexOf("PASTE")>-1)throw{error:"config"};b.t=T;var r;try{r=await fetch(u,{method:"POST",body:JSON.stringify(b)})}catch(e){throw{error:"net"}}var d;try{d=await r.json()}catch(e){throw{error:"access"}}if(d.error)throw d;return d}
+function msg(x){var m={unauthorized:"Wrong token",config:"config.js has no URL",net:"Cannot reach server",access:"Set access to Anyone, then redeploy",bad:"Server error"};return m[x&&x.error]||"Try again"}
 function rnd(n){var o="",lim=256-256%CS.length;while(o.length<n){var a=crypto.getRandomValues(new Uint8Array(64));for(var i=0;i<a.length&&o.length<n;i++)if(a[i]<lim)o+=CS[a[i]%CS.length]}return o}
 async function sha(s){var h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,"0")}).join("")}
 function cp(t,b){var o=b.textContent;function ok(){b.textContent="Copied";setTimeout(function(){b.textContent=o},1500)}function fb(){var a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){}a.remove()}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fb)}else fb()}
 function show(keys){var o=$("ko");o.textContent="";keys.forEach(function(k,i){var d=document.createElement("div");d.className="kc";d.style.setProperty("--i",Math.min(i,14));var c=document.createElement("code");c.className="mono";c.textContent=k;var b=document.createElement("button");b.className="btn alt";b.type="button";b.textContent="Copy";b.onclick=function(){cp(k,b)};d.appendChild(c);d.appendChild(b);o.appendChild(d)});$("ca").hidden=false;$("ca").onclick=function(){cp(keys.join("\n"),$("ca"))}}
 async function load(){var d=await api({a:"list"});rows=d.keys;draw()}
 function draw(){$("kl").innerHTML=rows.filter(function(k){return f==="all"||(f==="used")===!!k.used}).map(function(k,i){return '<div class="kr" style="animation-delay:'+Math.min(i,12)*.04+'s"><b>'+(k.plan==="std"?"Standard":"Premium")+'</b><span class="mono">'+k.hash.slice(0,8)+'</span><span class="st '+(k.used?"us":"un")+'">'+(k.used?"Used · "+new Date(k.used_at).toLocaleString():"Unused")+'</span><span class="ac">'+(k.used?'<button class="btn alt" type="button" data-a="reset" data-id="'+k.hash+'">Reset</button>':"")+'<button class="btn alt" type="button" data-a="delete" data-id="'+k.hash+'">Delete</button></span></div>'}).join("")}
-async function unlock(){if($("go").disabled)return;T=$("tk").value.trim();$("lm").textContent="";$("go").disabled=true;try{await load();$("lock").classList.add("gone");setTimeout(function(){$("lock").hidden=true;$("app").hidden=false;$("out").hidden=false},320);return}catch(x){T="";fl++;$("tk").classList.remove("shake");void $("tk").offsetWidth;$("tk").classList.add("shake");$("lm").textContent=x.error==="unauthorized"?"Wrong token":"Try again";if(fl>=5){$("lm").textContent="Wait 30s";setTimeout(function(){$("go").disabled=false;fl=0;$("lm").textContent=""},30000);return}}$("go").disabled=false}
+async function unlock(){if($("go").disabled)return;T=$("tk").value.trim();$("lm").textContent="";$("go").disabled=true;try{await load();$("lock").classList.add("gone");setTimeout(function(){$("lock").hidden=true;$("app").hidden=false;$("out").hidden=false},320);return}catch(x){T="";fl++;$("tk").classList.remove("shake");void $("tk").offsetWidth;$("tk").classList.add("shake");$("lm").textContent=msg(x);if(fl>=5){$("lm").textContent="Wait 30s";setTimeout(function(){$("go").disabled=false;fl=0;$("lm").textContent=""},30000);return}}$("go").disabled=false}
 $("go").onclick=unlock;
 $("tk").onkeydown=function(e){if(e.key==="Enter")unlock()};
 $("out").onclick=function(){T="";location.reload()};
 document.querySelectorAll("[data-p]").forEach(function(c){c.onclick=function(){P=c.dataset.p;$("gp").style.setProperty("--tint",P==="std"?"#2fe08a":"#ff9a2e");document.querySelectorAll("[data-p]").forEach(function(o){o.setAttribute("aria-pressed",o===c)})}});
 function step(d){$("ct").value=Math.min(Math.max((+$("ct").value||1)+d,1),100)}
 $("mn").onclick=function(){step(-1)};$("pp").onclick=function(){step(1)};
-$("gen").onclick=async function(){var b=$("gen");b.disabled=true;$("gm").textContent="";try{var n=Math.min(Math.max(+$("ct").value||1,1),100),keys=[],hs=[];for(var i=0;i<n;i++){var k="TRC_"+rnd(30);keys.push(k);hs.push(await sha(k))}await api({a:"add",plan:P,hashes:hs});show(keys);await load()}catch(x){$("gm").textContent="Failed"}b.disabled=false};
+$("gen").onclick=async function(){var b=$("gen");b.disabled=true;$("gm").textContent="";try{var n=Math.min(Math.max(+$("ct").value||1,1),100),keys=[],hs=[];for(var i=0;i<n;i++){var k="TRC_"+rnd(30);keys.push(k);hs.push(await sha(k))}await api({a:"add",plan:P,hashes:hs});show(keys);await load()}catch(x){$("gm").textContent=msg(x)}b.disabled=false};
 document.querySelectorAll("[data-f]").forEach(function(c){c.onclick=function(){f=c.dataset.f;document.querySelectorAll("[data-f]").forEach(function(o){o.setAttribute("aria-pressed",o===c)});draw()}});
 $("kl").onclick=async function(e){var b=e.target.closest("button");if(!b)return;if(b.dataset.a==="delete"&&b.textContent!=="Sure?"){b.textContent="Sure?";setTimeout(function(){b.textContent="Delete"},3000);return}b.disabled=true;try{await api({a:b.dataset.a==="delete"?"del":"reset",id:b.dataset.id});await load()}catch(x){b.disabled=false}};
+(async function(){var u=window.TRC_API,s=$("sv");if(!u||u.indexOf("PASTE")>-1){s.className="sv mono bad";s.textContent="config.js has no URL";return}try{var d=await(await fetch(u)).json();if(!d.ok)throw 0;s.className="sv mono ok";s.textContent="Server online"}catch(e){s.className="sv mono bad";s.textContent="Cannot reach server"}})();
 </script>
 </body>
 </html>
